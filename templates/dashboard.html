@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hive 1 Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+        }
+
+        .temperature {
+            font-size: 2.5rem;
+            margin: 20px 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 40px;
+            margin: 20px 0;
+        }
+
+        .stat {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🐝 Hive 1 Dashboard</h1>
+
+    <div class="temperature">
+        {{ temperature }} °C
+    </div>
+
+    <p>Last updated: {{ timestamp }}</p>
+
+    <div class="stats">
+
+        <div class="stat">
+            <strong>Minimum</strong><br>
+            {{ minimum }} °C
+        </div>
+
+        <div class="stat">
+            <strong>Maximum</strong><br>
+            {{ maximum }} °C
+        </div>
+
+        <div class="stat">
+            <strong>Readings</strong><br>
+            {{ reading_count }}
+        </div>
+
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<canvas id="temperatureChart"></canvas>
+
+<script>
+    const readings = {{ readings | tojson }};
+
+    const labels = readings.map(reading => reading.timestamp);
+    const temperatures = readings.map(reading => reading.temperature);
+
+    new Chart(document.getElementById("temperatureChart"), {
+        type: "line",
+
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Temperature °C",
+                data: temperatures,
+                tension: 0.2
+            }]
+        },
+
+        options: {
+            responsive: true
+        }
+    });
+</script>
+
+</body>
+</html>

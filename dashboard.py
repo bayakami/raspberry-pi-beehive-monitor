@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask, render_template
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -31,37 +31,40 @@ def get_today_temperatures(readings):
 
 @app.route("/")
 def home():
-    readings = get_readings()
+    with open("data/hive1.csv", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+        readings = list(reader)
 
-    latest = get_latest_reading(readings)
+    latest = readings[-1]
 
-    today_temperatures = get_today_temperatures(readings)
+    temperatures = [float(reading["temperature"]) for reading in readings]
 
-    if today_temperatures:
-        minimum = min(today_temperatures)
-        maximum = max(today_temperatures)
-    else:
-        minimum = "No data"
-        maximum = "No data"
+    minimum = min(temperatures)
+    maximum = max(temperatures)
 
-    return f"""
-    <h1>🐝 Hive 1 Dashboard</h1>
+    now = datetime.now()
+    twenty_four_hours_ago = now - timedelta(hours=24)
 
-    <h2>Current temperature: {latest['temperature']} °C</h2>
+    recent_readings = []
 
-    <p>Last updated: {latest['timestamp']}</p>
+    for reading in readings:
+        timestamp = datetime.strptime(
+            reading["timestamp"],
+            "%d-%m-%Y %H:%M:%S"
+        )
 
-    <hr>
+        if timestamp >= twenty_four_hours_ago:
+            recent_readings.append(reading)
 
-    <h3>Today's statistics</h3>
-
-    <p>Minimum: {minimum} °C</p>
-
-    <p>Maximum: {maximum} °C</p>
-
-    <p>Total readings stored: {len(readings)}</p>
-    """
-
+    return render_template(
+        "dashboard.html",
+        temperature=latest["temperature"],
+        timestamp=latest["timestamp"],
+        minimum=minimum,
+        maximum=maximum,
+        reading_count=len(readings),
+        readings=recent_readings
+    )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
