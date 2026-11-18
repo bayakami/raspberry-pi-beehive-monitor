@@ -3,10 +3,12 @@
 <head>
     <title>Hive 1 Dashboard</title>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 40px auto;
             padding: 0 20px;
         }
@@ -15,21 +17,27 @@
             margin-bottom: 5px;
         }
 
-        .temperature {
-            font-size: 2.5rem;
-            margin: 20px 0;
-        }
-
-        .stats {
+        .cards {
             display: flex;
-            gap: 40px;
-            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 25px 0;
         }
 
-        .stat {
-            padding: 15px;
+        .card {
+            padding: 20px;
             border: 1px solid #ddd;
             border-radius: 8px;
+            min-width: 150px;
+        }
+
+        .value {
+            font-size: 2rem;
+            margin-top: 10px;
+        }
+
+        .chart {
+            margin-top: 40px;
         }
     </style>
 </head>
@@ -38,57 +46,103 @@
 
     <h1>🐝 Hive 1 Dashboard</h1>
 
-    <div class="temperature">
-        {{ temperature }} °C
-    </div>
-
     <p>Last updated: {{ timestamp }}</p>
 
-    <div class="stats">
+    <div class="cards">
 
-        <div class="stat">
-            <strong>Minimum</strong><br>
-            {{ minimum }} °C
+        <div class="card">
+            <strong>Temperature</strong>
+            <div class="value">{{ temperature }} °C</div>
         </div>
 
-        <div class="stat">
-            <strong>Maximum</strong><br>
-            {{ maximum }} °C
+        <div class="card">
+            <strong>Hive weight</strong>
+            <div class="value">
+                {{ "%.3f"|format(weight_kg) if weight_kg is not none else "Unavailable" }}
+                {% if weight_kg is not none %} kg {% endif %}
+            </div>
         </div>
 
-        <div class="stat">
-            <strong>Readings</strong><br>
-            {{ reading_count }}
+        <div class="card">
+            <strong>Weight change (24h)</strong>
+            <div class="value">
+                {{ "%.3f"|format(weight_change) if weight_change is not none else "—" }}
+                {% if weight_change is not none %} kg {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <strong>Minimum temperature</strong>
+            <div class="value">{{ minimum }} °C</div>
+        </div>
+
+        <div class="card">
+            <strong>Maximum temperature</strong>
+            <div class="value">{{ maximum }} °C</div>
+        </div>
+
+        <div class="card">
+            <strong>Total readings</strong>
+            <div class="value">{{ reading_count }}</div>
         </div>
 
     </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<canvas id="temperatureChart"></canvas>
+    <div class="chart">
+        <h2>Temperature history</h2>
+        <canvas id="temperatureChart"></canvas>
+    </div>
 
-<script>
-    const readings = {{ readings | tojson }};
+    <div class="chart">
+        <h2>Weight history</h2>
+        <canvas id="weightChart"></canvas>
+    </div>
 
-    const labels = readings.map(reading => reading.timestamp);
-    const temperatures = readings.map(reading => reading.temperature);
+    <script>
 
-    new Chart(document.getElementById("temperatureChart"), {
-        type: "line",
+        const readings = {{ readings | tojson }};
 
-        data: {
-            labels: labels,
-            datasets: [{
-                label: "Temperature °C",
-                data: temperatures,
-                tension: 0.2
-            }]
-        },
+        const labels = readings.map(reading => reading.timestamp);
 
-        options: {
-            responsive: true
-        }
-    });
-</script>
+        const temperatures = readings.map(
+            reading => reading.temperature
+        );
+
+        const weights = readings.map(
+            reading => reading.weight_kg
+        );
+
+        new Chart(document.getElementById("temperatureChart"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Temperature °C",
+                    data: temperatures,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        new Chart(document.getElementById("weightChart"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Weight kg",
+                    data: weights,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+    </script>
 
 </body>
 </html>
